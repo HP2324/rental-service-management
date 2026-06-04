@@ -96,12 +96,6 @@ cp .env.example .env
 cp frontend/.env.example frontend/.env
 ```
 
-Open `frontend/.env` and fill in your Stripe publishable key:
-
-```
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
-```
-
 **3. Start the full stack**
 
 ```bash

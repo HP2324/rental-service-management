@@ -1,0 +1,27 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: payment-service
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:password@localhost:27017/payments?authSource=admin}
+      auto-index-creation: true
+
+jwt:
+  secret: ${JWT_SECRET:rental-app-secret-key-must-be-at-least-32-characters-long}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_placeholder}
+
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID:placeholder}
+  client-secret: ${PAYPAL_CLIENT_SECRET:placeholder}
+  base-url: ${PAYPAL_BASE_URL:https://api-m.sandbox.paypal.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

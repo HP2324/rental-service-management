@@ -1,0 +1,107 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: rental-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: rental-mongo-express
+    ports:
+      - "8084:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: rental-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/users?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-rental-app-secret-key-must-be-at-least-32-characters-long}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  listing-service:
+    build:
+      context: .
+      dockerfile: listing-service/Dockerfile
+    container_name: rental-listing-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/listings?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-rental-app-secret-key-must-be-at-least-32-characters-long}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - listing-uploads:/app/uploads
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: rental-payment-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/payments?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-rental-app-secret-key-must-be-at-least-32-characters-long}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-placeholder}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-placeholder}
+      PAYPAL_BASE_URL: ${PAYPAL_BASE_URL:-https://api-m.sandbox.paypal.com}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: rental-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-rental-app-secret-key-must-be-at-least-32-characters-long}
+      USER_SERVICE_URL: http://user-service:8081
+      LISTING_SERVICE_URL: http://listing-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8083
+    depends_on:
+      - user-service
+      - listing-service
+      - payment-service
+
+volumes:
+  mongo-data:
+  listing-uploads:

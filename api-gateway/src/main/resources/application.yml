@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Auth endpoints — no JWT required
+        - id: user-service-auth
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+
+        # User endpoints — JWT required
+        - id: user-service-users
+          uri: ${USER_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/users/**
+
+        # Listing endpoints
+        - id: listing-service
+          uri: ${LISTING_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/listings/**
+
+        # Payment endpoints
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/payments/**
+
+        # Uploaded images served from listing-service
+        - id: listing-uploads
+          uri: ${LISTING_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/uploads/**
+
+jwt:
+  secret: ${JWT_SECRET:rental-app-secret-key-must-be-at-least-32-characters-long}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO

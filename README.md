@@ -6,7 +6,7 @@ A production-grade rental property platform built with a Java microservices back
 
 ## Features
 
-- JWT authentication with three distinct roles — Admin, Landlord, and Tenant
+- JWT authentication with two distinct roles — Landlord and Tenant
 - Role-based access control enforced at both the API gateway and service level
 - Rental listing management with image uploads, city/price/bedroom search filters
 - Stripe and PayPal payment integration with sandbox support
@@ -96,19 +96,11 @@ cp .env.example .env
 cp frontend/.env.example frontend/.env
 ```
 
-Open `.env` and fill in your Stripe test key:
-
-```
-STRIPE_SECRET_KEY=sk_test_your_key_here
-```
-
 Open `frontend/.env` and fill in your Stripe publishable key:
 
 ```
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
 ```
-
-Both keys are available at [dashboard.stripe.com](https://dashboard.stripe.com) → Developers → API keys (Test mode).
 
 **3. Start the full stack**
 
@@ -202,7 +194,7 @@ All API traffic goes through the gateway at port 8080. The frontend proxies `/ap
   "role": "TENANT"
 }
 ```
-Role must be one of `TENANT`, `LANDLORD`, or `ADMIN`.
+Role must be one of `TENANT` or `LANDLORD`.
 
 **Response**
 ```json
@@ -291,7 +283,7 @@ Returns active listings matching the filters. No authentication required.
 
 #### `POST /api/listings`
 
-Creates a new listing. Requires `LANDLORD` or `ADMIN` role.
+Creates a new listing. Requires `LANDLORD` role.
 
 **Request**
 ```json
@@ -321,7 +313,6 @@ Updates the status of a listing. Role-based rules apply:
 |------|---------------|-------------|
 | TENANT | `INACTIVE` only | After paying rent |
 | LANDLORD | `ACTIVE`, `INACTIVE` | Own listings only |
-| ADMIN | Any | Any listing |
 
 **Request**
 ```json
@@ -332,7 +323,7 @@ Updates the status of a listing. Role-based rules apply:
 
 #### `POST /api/listings/upload`
 
-Uploads a photo for a listing. Requires `LANDLORD` or `ADMIN` role. Returns the URL path to use in `imageUrls`.
+Uploads a photo for a listing. Requires `LANDLORD` role. Returns the URL path to use in `imageUrls`.
 
 **Request:** `multipart/form-data` with field `file` (JPEG, PNG, WebP — max 10 MB)
 
@@ -439,7 +430,6 @@ Test card: `4242 4242 4242 4242` · any future date · any 3-digit CVC
 |------|-------------|
 | **Tenant** | Browse listings, search by city/price/bedrooms, make payments, view payment history |
 | **Landlord** | Create, edit, and delete own listings, upload listing photos, view received payments |
-| **Admin** | Full access to all users, listings, and operations |
 
 ---
 

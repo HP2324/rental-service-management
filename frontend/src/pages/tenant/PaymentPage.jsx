@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { getListing, updateListingStatus } from '@/api/listings'
 import { initiatePayment, syncStripeStatus } from '@/api/payments'
+import PayPalButton from '@/components/PayPalButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react'
@@ -129,6 +130,7 @@ export default function PaymentPage() {
   const [loadingListing, setLoadingListing] = useState(!listing)
   const [status, setStatus] = useState('idle') // idle | success | error
   const [errorMsg, setErrorMsg] = useState('')
+  const [provider, setProvider] = useState('STRIPE') // STRIPE | PAYPAL
 
   useEffect(() => {
     if (listing) return
@@ -160,17 +162,41 @@ export default function PaymentPage() {
       <Card>
         <CardHeader>
           <CardTitle>Complete your payment</CardTitle>
-          <CardDescription>Secured by Stripe</CardDescription>
+          <CardDescription>Choose your payment method</CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-6">
+          {/* Provider toggle */}
+          <div className="flex rounded-md border overflow-hidden">
+            <button
+              onClick={() => { setProvider('STRIPE'); setErrorMsg('') }}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                provider === 'STRIPE'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              Credit / Debit Card
+            </button>
+            <button
+              onClick={() => { setProvider('PAYPAL'); setErrorMsg('') }}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                provider === 'PAYPAL'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              PayPal
+            </button>
+          </div>
+
           {errorMsg && (
-            <div className="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <XCircle className="h-4 w-4 shrink-0" />{errorMsg}
             </div>
           )}
 
-          {listing && (
+          {listing && provider === 'STRIPE' && (
             <Elements stripe={stripePromise}>
               <CheckoutForm
                 listing={listing}
@@ -179,6 +205,15 @@ export default function PaymentPage() {
                 onError={(msg) => setErrorMsg(msg)}
               />
             </Elements>
+          )}
+
+          {listing && provider === 'PAYPAL' && (
+            <PayPalButton
+              listing={listing}
+              listingId={id}
+              onSuccess={() => setStatus('success')}
+              onError={(msg) => setErrorMsg(msg)}
+            />
           )}
         </CardContent>
       </Card>

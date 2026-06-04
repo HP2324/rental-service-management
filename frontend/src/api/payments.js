@@ -11,3 +11,6 @@ export const getPayment = (id) =>
 
 export const getMyPayments = () =>
   client.get('/payments/my-payments').then((r) => r.data.data)
+
+export const capturePayPalPayment = (orderId) =>
+  client.post(`/payments/paypal/capture?orderId=${orderId}`).then((r) => r.data.data)
